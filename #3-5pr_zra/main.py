@@ -33,8 +33,8 @@ SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 500
 
 GRAVITY = 2
-PLAYER_MOVEMENT_SPEED = 8
-PLAYER_JUMP_SPEED = 20
+PLAYER_MOVEMENT_SPEED = 7
+PLAYER_JUMP_SPEED = 23
 
 RIGHT_FACING = 0
 LEFT_FACING = 1
@@ -52,7 +52,7 @@ class Player(arcade.Sprite):
 		self.scale = 3
 		self.idle = True
 		self.hit_box_algorithm = "Detailed"
-		self.hit_points = 3
+		self.hit_points = 300
 
 		self.idle_textures = []
 		for i in range(0, 12):
