@@ -51,6 +51,8 @@ class Player(arcade.Sprite):
 		self.cur_texture = 0
 		self.scale = 3
 		self.idle = True
+		self.hit_box_algorithm = "Detailed"
+		self.hit_points = 3
 
 		self.idle_textures = []
 		for i in range(0, 12):
@@ -98,7 +100,12 @@ class Game(arcade.Window):
 		self.bg_layer_3 = arcade.load_texture('Jungle Asset Pack/parallax background/plx-3.png')
 		self.bg_layer_4 = arcade.load_texture('Jungle Asset Pack/parallax background/plx-4.png')
 		self.bg_layer_5 = arcade.load_texture('Jungle Asset Pack/parallax background/plx-5.png')
-		
+
+		self.zero_hit_points = arcade.load_texture('sprites/0_hit_poins.png')
+		self.one_hit_points = arcade.load_texture('sprites/1_hit_poins.png')
+		self.two_hit_points = arcade.load_texture('sprites/2_hit_poins.png')
+		self.tree_hit_points = arcade.load_texture('sprites/3_hit_poins.png')
+
 		self.player = None
 		self.physics_engine = None
 		self.camera = None
@@ -138,16 +145,15 @@ class Game(arcade.Window):
 			self.phys_ground_list.append(ground)
 
 		for j in range(0, SCREEN_WIDTH + 2000, 450):
-			ground = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
-			ground.center_x = j + random.randint(200, 400)
-			ground.center_y = 60
-			self.light_bush_list.append(ground)
+			light_bush = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
+			light_bush.center_x = j + random.randint(200, 400)
+			light_bush.center_y = 60
+			self.light_bush_list.append(light_bush)
 
-		for j in range(0, SCREEN_WIDTH + 2000, 450):
-			ground = arcade.Sprite('sprites/jungle tileset/phys_light_bush.png', 2.5)
-			ground.center_x = j + random.randint(200, 400)
-			ground.center_y = 60
-			self.phys_light_bush_list.append(ground)
+			phys_light_bush = arcade.Sprite('sprites/jungle tileset/phys_light_bush.png', 2.5)
+			phys_light_bush.center_x = light_bush.center_x
+			phys_light_bush.center_y = light_bush.center_y
+			self.phys_light_bush_list.append(phys_light_bush)
 
 		for j in range(0, 2600, 150):
 			flying_cubic_bush = arcade.Sprite('sprites/jungle tileset/flying_cubic_bush.png', 1.5)
@@ -179,6 +185,17 @@ class Game(arcade.Window):
 		self.flying_cubic_bush_list.draw()
 		self.phys_light_bush_list.draw()
 
+		if self.player.hit_points == 3:
+			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
+		if self.player.hit_points == 3:
+			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.two_hit_points)
+		if self.player.hit_points == 3:
+			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
+		if self.player.hit_points == 3:
+			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
+		if self.player.hit_points == 3:
+			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
+
 		if self.player.bottom < 0:
 			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
 			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
@@ -187,10 +204,10 @@ class Game(arcade.Window):
 
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
 			arcade.draw_text("ПОТРАЧЕНО", camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
-			arcade.draw_text("Нажми 'ПРОБЕЛ' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
-			arcade.draw_text("Нажми 'Я' чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'CAPSLOCK' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
 			self.game_over = True
-			
+
 		self.camera.use()
 
 	def on_key_press(self, key, modifiers):
@@ -208,8 +225,6 @@ class Game(arcade.Window):
 				self.last_pressed_key = key
 				if self.physics_engine.can_jump() and self.player.change_x != 0:
 					self.run_sound_play = arcade.play_sound(self.run_sound, volume=0.2, looping=False)
-				'''else:
-					arcade.stop_sound(self.run_sound_play)'''
 
 			elif key == arcade.key.RIGHT or key == arcade.key.D:
 				self.player.change_x = PLAYER_MOVEMENT_SPEED
@@ -217,10 +232,8 @@ class Game(arcade.Window):
 				self.last_pressed_key = key
 				if self.physics_engine.can_jump() and self.player.change_x != 0:
 					self.run_sound_play = arcade.play_sound(self.run_sound, volume=0.2, looping=False)
-				'''else:
-					arcade.stop_sound(self.run_sound_play)'''
 
-		if self.game_over and key == arcade.key.SPACE:
+		if self.game_over and key == arcade.key.CAPSLOCK:
 			self.game_over = False
 			self.player.center_x = 50
 			self.player.center_y = 100
@@ -234,10 +247,9 @@ class Game(arcade.Window):
 			self.player.change_y = 0
 			self.player.idle = True
 			self.last_pressed_key = None
-			if self.walk_sound_play:
-				arcade.stop_sound(self.walk_sound_play)
-				self.walk_sound_play = None
 
+		if self.game_over and key == arcade.key.Z:
+			arcade.close_window()
 
 	def on_key_release(self, key, modifiers):
 		if key == arcade.key.SPACE:
