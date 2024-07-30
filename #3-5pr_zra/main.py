@@ -28,7 +28,7 @@ run_saving_path = 'sprites/run'
 splits_gif_into_frames(idle_path, idle_saving_path)
 splits_gif_into_frames(run_path, run_saving_path)
 
-SCREEN_TITLE = ''
+SCREEN_TITLE = 'ИНДИАНА ДЖОНС: Сокровища орангутанга.'
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 500
 
@@ -101,10 +101,10 @@ class Game(arcade.Window):
 		self.bg_layer_4 = arcade.load_texture('Jungle Asset Pack/parallax background/plx-4.png')
 		self.bg_layer_5 = arcade.load_texture('Jungle Asset Pack/parallax background/plx-5.png')
 
-		self.zero_hit_points = arcade.load_texture('sprites/0_hit_poins.png')
-		self.one_hit_points = arcade.load_texture('sprites/1_hit_poins.png')
-		self.two_hit_points = arcade.load_texture('sprites/2_hit_poins.png')
-		self.tree_hit_points = arcade.load_texture('sprites/3_hit_poins.png')
+		self.zero_hit_points = arcade.load_texture('sprites/hit_points/0_hit_points.png')
+		self.one_hit_points = arcade.load_texture('sprites/hit_points/1_hit_points.png')
+		self.two_hit_points = arcade.load_texture('sprites/hit_points/2_hit_points.png')
+		self.tree_hit_points = arcade.load_texture('sprites/hit_points/3_hit_points.png')
 
 		self.player = None
 		self.physics_engine = None
@@ -114,6 +114,7 @@ class Game(arcade.Window):
 		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=0.1, looping=True)
 		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx - Sounds of the Jungle (320 kbps).mp3')
 		self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=0.1, looping=True)
+		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.mp3')
 		
 		self.run_sound = arcade.load_sound('sounds/run_sound.wav')
 		self.walk_sound = arcade.load_sound('sounds/walk_sound.wav')
@@ -126,28 +127,27 @@ class Game(arcade.Window):
 
 	def setup(self):
 		self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-		self.ground_list = arcade.SpriteList()
-		self.phys_ground_list = arcade.SpriteList()
+		self.dirt_list = arcade.SpriteList()
+		self.phys_dirt_list = arcade.SpriteList()
 		self.light_bush_list = arcade.SpriteList()
 		self.flying_cubic_bush_list = arcade.SpriteList()
 		self.phys_light_bush_list = arcade.SpriteList()
 
-		for j in range(0, SCREEN_WIDTH + 1000, 490):
-			ground = arcade.Sprite('sprites/jungle tileset/dirt.png', 3.1)
-			ground.center_x = j
-			ground.center_y = 5
-			self.ground_list.append(ground)
+		for j in range(0, 400, 490):
+			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', 3.1)
+			dirt.center_x = j
+			dirt.center_y = 5
+			self.dirt_list.append(dirt)
 
-		for j in range(0, SCREEN_WIDTH + 1000, 160):
-			ground = arcade.Sprite('sprites/jungle tileset/phys_dirt.png', 2.5)
-			ground.center_x = j
-			ground.center_y = 5
-			self.phys_ground_list.append(ground)
+			phys_dirt = arcade.Sprite('sprites/jungle tileset/phys_dirt.png', 3.1)
+			phys_dirt.center_x = dirt.center_x
+			phys_dirt.center_y = dirt.center_y - 10
+			self.phys_dirt_list.append(phys_dirt)
 
-		for j in range(0, SCREEN_WIDTH + 2000, 450):
+		for j in range(400, 800, 200):
 			light_bush = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
-			light_bush.center_x = j + random.randint(200, 400)
-			light_bush.center_y = 60
+			light_bush.center_x = j #+ random.randint(200, 400)
+			light_bush.center_y = 60 + random.randint(0, 50)
 			self.light_bush_list.append(light_bush)
 
 			phys_light_bush = arcade.Sprite('sprites/jungle tileset/phys_light_bush.png', 2.5)
@@ -155,18 +155,51 @@ class Game(arcade.Window):
 			phys_light_bush.center_y = light_bush.center_y
 			self.phys_light_bush_list.append(phys_light_bush)
 
-		for j in range(0, 2600, 150):
-			flying_cubic_bush = arcade.Sprite('sprites/jungle tileset/flying_cubic_bush.png', 1.5)
-			flying_cubic_bush.center_x = j + 100
-			flying_cubic_bush.center_y = 30 + (j/2)
+		
+		def draw_dirt(x, y, scale):
+			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', scale)
+			dirt.center_x = x
+			dirt.center_y = y
+			self.dirt_list.append(dirt)
+
+			phys_dirt = arcade.Sprite('sprites/jungle tileset/phys_dirt.png', scale)
+			phys_dirt.center_x = dirt.center_x
+			phys_dirt.center_y = dirt.center_y - 10
+			self.phys_dirt_list.append(phys_dirt)
+
+		draw_dirt(1050, 60, 3.1)
+		draw_dirt(1950, 60, 3.1)
+
+		def draw_light_bush(x, y, scale):
+			light_bush = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
+			light_bush.center_x = x
+			light_bush.center_y = y
+			self.light_bush_list.append(light_bush)
+
+			phys_light_bush = arcade.Sprite('sprites/jungle tileset/phys_light_bush.png', 2.5)
+			phys_light_bush.center_x = light_bush.center_x
+			phys_light_bush.center_y = light_bush.center_y
+			self.phys_light_bush_list.append(phys_light_bush)
+
+		draw_light_bush(1160, 100, 2.5)
+		draw_light_bush(1550, 100, 2.5)
+
+		def draw_flying_cubic_bush(x, y, scale):
+			flying_cubic_bush = arcade.Sprite('sprites/jungle tileset/flying_cubic_bush.png', scale)
+			flying_cubic_bush.center_x = x
+			flying_cubic_bush.center_y = y
 			self.flying_cubic_bush_list.append(flying_cubic_bush)
 
+		draw_flying_cubic_bush(1030, 150, 1.7)
+		draw_flying_cubic_bush(1050, 175, 1.7)
+		draw_flying_cubic_bush(1230, 250, 1.7)
+		draw_flying_cubic_bush(1240, 310, 1.7)
 
 		self.player = Player()
 
-		self.ground_list.center_y = 2
+		self.dirt_list.center_y = 2
 		self.physics_engine = arcade.PhysicsEnginePlatformer(
-			self.player, gravity_constant=GRAVITY, walls=[self.phys_ground_list, self.phys_light_bush_list, self.flying_cubic_bush_list]
+			self.player, gravity_constant=GRAVITY, walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list]
 		)
 
 	def on_draw(self):
@@ -181,22 +214,20 @@ class Game(arcade.Window):
 
 		self.player.draw()
 		self.light_bush_list.draw()
-		self.ground_list.draw()
+		self.dirt_list.draw()
 		self.flying_cubic_bush_list.draw()
 		self.phys_light_bush_list.draw()
 
+		if self.player.hit_points == 0:
+			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.zero_hit_points)
+		if self.player.hit_points == 1:
+			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.one_hit_points)
+		if self.player.hit_points == 2:
+			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.two_hit_points)
 		if self.player.hit_points == 3:
-			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
-		if self.player.hit_points == 3:
-			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.two_hit_points)
-		if self.player.hit_points == 3:
-			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
-		if self.player.hit_points == 3:
-			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
-		if self.player.hit_points == 3:
-			arcade.draw_lrwh_rectangle_textured(50, 400, 100, 100, self.tree_hit_points)
+			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.tree_hit_points)
 
-		if self.player.bottom < 0:
+		if self.player.bottom < 0 and self.player.hit_points > 0:
 			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
 			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
 
@@ -204,9 +235,22 @@ class Game(arcade.Window):
 
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
 			arcade.draw_text("ПОТРАЧЕНО", camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
-			arcade.draw_text("Нажми 'CAPSLOCK' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
-			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'CAPSLOCK' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.APPLE_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 			self.game_over = True
+
+		elif self.player.bottom < 0 and self.player.hit_points == 0:
+			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
+			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
+
+			arcade.draw_rectangle_filled(camera_center_x, camera_center_y, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, 200))
+
+			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
+			arcade.draw_text("ПОМЕР", camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
+			arcade.draw_text("Ты потратил все жизни, игра окончена.", camera_center_x, camera_center_y - 70, arcade.color.RED, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
+			self.game_over = True
+
 
 		self.camera.use()
 
@@ -233,20 +277,25 @@ class Game(arcade.Window):
 				if self.physics_engine.can_jump() and self.player.change_x != 0:
 					self.run_sound_play = arcade.play_sound(self.run_sound, volume=0.2, looping=False)
 
-		if self.game_over and key == arcade.key.CAPSLOCK:
+		if self.game_over and self.player.hit_points > 0 and key == arcade.key.CAPSLOCK:
 			self.game_over = False
 			self.player.center_x = 50
 			self.player.center_y = 100
-			self.fall_sound_played = False
+			self.player.change_x = 0
+			self.player.change_y = 0
+			self.player.idle = True
+			self.player.hit_points -= 1
+
 			arcade.stop_sound(self.rip_fall_play)
 			arcade.stop_sound(self.soundtrack_play)
 			arcade.stop_sound(self.nature_sound_play)
 			self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=0.1, looping=True)
 			self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=0.1, looping=True)
-			self.player.change_x = 0
-			self.player.change_y = 0
-			self.player.idle = True
+			self.cj_replica_sound_play = arcade.play_sound(self.cj_replica_sound, volume=0.1, looping=False)
+
+			self.fall_sound_played = False
 			self.last_pressed_key = None
+			
 
 		if self.game_over and key == arcade.key.Z:
 			arcade.close_window()
@@ -290,6 +339,9 @@ class Game(arcade.Window):
 		if self.player.top < 0 and self.fall_sound_played == False:
 			self.rip_fall_play = arcade.play_sound(self.rip_fall, volume=0.3, looping=False)
 			self.fall_sound_played = True
+
+		if self.game_over == False and self.player.hit_points < 0:
+			arcade.close_window()
 
 
 def main():
