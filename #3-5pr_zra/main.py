@@ -56,7 +56,7 @@ class Player(arcade.Sprite):
 		self.scale = 3
 		self.idle = True
 		self.hit_box_algorithm = "Detailed"
-		self.hit_points = 300
+		self.hit_points = 3
 
 		self.idle_textures = []
 		for i in range(0, 12):
@@ -101,8 +101,11 @@ class Chest(arcade.Sprite):
 		self.scale = 0.5
 		self.is_open = False
 
+		self.use_key = arcade.load_sound('sounds/use_key.mp3')
+
 	def open(self):
 		self.texture = self.open_texture
+		self.use_key_play  = arcade.play_sound(self.use_key, volume=SOUND_VOLUME + 0.2, looping=False)
 		self.is_open = True
 
 
@@ -130,8 +133,6 @@ class Game(arcade.Window):
 		self.physics_engine = None
 		self.camera = None
 
-		self.setup()
-
 		self.soundtrack = arcade.load_sound('sounds/Valve_-_Jungle_Drums_(Zvyki.com).mp3')
 		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
 		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx - Sounds of the Jungle (320 kbps).mp3')
@@ -140,14 +141,22 @@ class Game(arcade.Window):
 		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.mp3')
 		self.run_sound = arcade.load_sound('sounds/run_sound.wav')
 		self.walk_sound = arcade.load_sound('sounds/walk_sound.wav')
+
 		self.rip_fall = arcade.load_sound('sounds/rip-fall.mp3')
+		self.death_mario = arcade.load_sound('sounds/death_mario.mp3')
+		self.death_sounds = [self.rip_fall, self.death_mario]
+
 		self.open_chest = arcade.load_sound('sounds/open_chest.mp3')
 		self.yeahboy_sound = arcade.load_sound('sounds/yeahboy.mp3')
+		self.o_my_god_sound = arcade.load_sound('sounds/o_my_god.mp3')
+		self.dange_sound = [self.yeahboy_sound, self.o_my_god_sound]
 
 		self.last_pressed_key = None
+		self.current_death_sound = self.o_my_god_sound
 		self.fall_sound_played = False
 		self.game_over = False
 		self.was_on_ground = False
+		self.win = False
 
 	def setup(self):
 		self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -303,6 +312,22 @@ class Game(arcade.Window):
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 			self.game_over = True
 
+		elif self.win:
+			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
+			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
+
+			arcade.draw_rectangle_filled(camera_center_x, camera_center_y, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, 200))
+			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
+			
+			if self.current_death_sound == self.yeahboy_sound:
+				text = "Yeeeeeah boy!"
+			elif self.current_death_sound == self.o_my_god_sound:
+				text = "OOHHH MY GOD!"
+
+			arcade.draw_text(text, camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
+			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!.", camera_center_x, camera_center_y - 70, arcade.color.RED, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
+
 		self.camera.use()
 
 	def on_key_press(self, key, modifiers):
@@ -333,8 +358,12 @@ class Game(arcade.Window):
 				#print(f"Distance to chest: {distance}")
 				if distance < 70 and not self.chest.is_open:
 					self.chest.open()
+					time.sleep(1)
 					self.open_chest_play  = arcade.play_sound(self.open_chest, volume=SOUND_VOLUME + 0.2, looping=False)
-					self.open_chest_play  = arcade.play_sound(self.yeahboy_sound, volume=SOUND_VOLUME + 0.2, looping=False)
+					time.sleep(0.5)
+					current_death_sound = random.choice(self.dange_sound)
+					self.dange_sound_play  = arcade.play_sound(current_death_sound, volume=SOUND_VOLUME + 0.2, looping=False)
+					self.win = True
 
 		if self.game_over and self.player.hit_points > 0 and key == arcade.key.ESCAPE:
 			self.game_over = False
@@ -356,7 +385,7 @@ class Game(arcade.Window):
 			self.last_pressed_key = None
 			
 
-		if self.game_over and key == arcade.key.Z:
+		if (self.game_over or self.win) and key == arcade.key.Z:
 			arcade.close_window()
 
 	def on_key_release(self, key, modifiers):
@@ -396,7 +425,7 @@ class Game(arcade.Window):
 			self.player.right = 2400
 
 		if self.player.top < 0 and self.fall_sound_played == False:
-			self.rip_fall_play = arcade.play_sound(self.rip_fall, volume=SOUND_VOLUME, looping=False)
+			self.rip_fall_play = arcade.play_sound(random.choice(self.death_sounds), volume=SOUND_VOLUME, looping=False)
 			self.fall_sound_played = True
 
 
