@@ -42,6 +42,10 @@ LEFT_FACING = 1
 DEFAULT_LINE_HEIGHT = 45
 DEFAULT_FONT_SIZE = 16
 
+MUSIC_VOLUME = 0.1
+SOUND_VOLUME = 0.3
+
+
 class Player(arcade.Sprite):
 	def __init__(self):
 		super().__init__()
@@ -86,6 +90,21 @@ class Player(arcade.Sprite):
 				self.person_face_direction
 			]
 
+class Chest(arcade.Sprite):
+	def __init__(self):
+		super().__init__()
+		self.closed_texture = arcade.load_texture("sprites/chest/close_chest.png")
+		self.open_texture = arcade.load_texture("sprites/chest/open_chest.png")
+		self.texture = self.closed_texture
+		self.center_x = 2300
+		self.center_y = 130
+		self.scale = 0.5
+		self.is_open = False
+
+	def open(self):
+		self.texture = self.open_texture
+		self.is_open = True
+
 
 class Game(arcade.Window):
 	def __init__(self):
@@ -107,26 +126,32 @@ class Game(arcade.Window):
 		self.tree_hit_points = arcade.load_texture('sprites/hit_points/3_hit_points.png')
 
 		self.player = None
+		self.chest = None
 		self.physics_engine = None
 		self.camera = None
 
+		self.setup()
+
 		self.soundtrack = arcade.load_sound('sounds/Valve_-_Jungle_Drums_(Zvyki.com).mp3')
-		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=0.1, looping=True)
+		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
 		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx - Sounds of the Jungle (320 kbps).mp3')
-		self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=0.1, looping=True)
-		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.mp3')
+		self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=MUSIC_VOLUME, looping=True)
 		
+		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.mp3')
 		self.run_sound = arcade.load_sound('sounds/run_sound.wav')
 		self.walk_sound = arcade.load_sound('sounds/walk_sound.wav')
 		self.rip_fall = arcade.load_sound('sounds/rip-fall.mp3')
+		self.open_chest = arcade.load_sound('sounds/open_chest.mp3')
+		self.yeahboy_sound = arcade.load_sound('sounds/yeahboy.mp3')
 
+		self.last_pressed_key = None
 		self.fall_sound_played = False
 		self.game_over = False
 		self.was_on_ground = False
-		self.last_pressed_key = None
 
 	def setup(self):
 		self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+		self.chest_list = arcade.SpriteList()
 		self.dirt_list = arcade.SpriteList()
 		self.phys_dirt_list = arcade.SpriteList()
 		self.light_bush_list = arcade.SpriteList()
@@ -137,6 +162,17 @@ class Game(arcade.Window):
 			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', 3.1)
 			dirt.center_x = j
 			dirt.center_y = 5
+			self.dirt_list.append(dirt)
+
+			phys_dirt = arcade.Sprite('sprites/jungle tileset/phys_dirt.png', 3.1)
+			phys_dirt.center_x = dirt.center_x
+			phys_dirt.center_y = dirt.center_y - 10
+			self.phys_dirt_list.append(phys_dirt)
+
+		for j in range(1950, 2400, 400):
+			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', 3.1)
+			dirt.center_x = j
+			dirt.center_y = 60
 			self.dirt_list.append(dirt)
 
 			phys_dirt = arcade.Sprite('sprites/jungle tileset/phys_dirt.png', 3.1)
@@ -155,6 +191,16 @@ class Game(arcade.Window):
 			phys_light_bush.center_y = light_bush.center_y
 			self.phys_light_bush_list.append(phys_light_bush)
 
+		for j in range(100, 280, 30):
+			light_bush = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
+			light_bush.center_x = 1260 + random.randint(0, 15)
+			light_bush.center_y = j
+			self.light_bush_list.append(light_bush)
+
+			phys_light_bush = arcade.Sprite('sprites/jungle tileset/phys_light_bush.png', 2.5)
+			phys_light_bush.center_x = light_bush.center_x
+			phys_light_bush.center_y = light_bush.center_y
+			self.phys_light_bush_list.append(phys_light_bush)
 		
 		def draw_dirt(x, y, scale):
 			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', scale)
@@ -168,7 +214,6 @@ class Game(arcade.Window):
 			self.phys_dirt_list.append(phys_dirt)
 
 		draw_dirt(1050, 60, 3.1)
-		draw_dirt(1950, 60, 3.1)
 
 		def draw_light_bush(x, y, scale):
 			light_bush = arcade.Sprite('sprites/jungle tileset/light_bush.png', 2.5)
@@ -182,7 +227,7 @@ class Game(arcade.Window):
 			self.phys_light_bush_list.append(phys_light_bush)
 
 		draw_light_bush(1160, 100, 2.5)
-		draw_light_bush(1550, 100, 2.5)
+		draw_light_bush(1500, 100, 2.5)
 
 		def draw_flying_cubic_bush(x, y, scale):
 			flying_cubic_bush = arcade.Sprite('sprites/jungle tileset/flying_cubic_bush.png', scale)
@@ -192,14 +237,19 @@ class Game(arcade.Window):
 
 		draw_flying_cubic_bush(1030, 150, 1.7)
 		draw_flying_cubic_bush(1050, 175, 1.7)
-		draw_flying_cubic_bush(1230, 250, 1.7)
-		draw_flying_cubic_bush(1240, 310, 1.7)
+		draw_flying_cubic_bush(1270, 290, 1.7)
+		draw_flying_cubic_bush(1280, 350, 1.7)
 
 		self.player = Player()
+		self.chest = Chest()
 
-		self.dirt_list.center_y = 2
+		self.chest = Chest()
+		self.chest_list.append(self.chest)
+
 		self.physics_engine = arcade.PhysicsEnginePlatformer(
-			self.player, gravity_constant=GRAVITY, walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list]
+			self.player, 
+			gravity_constant=GRAVITY, 
+			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list]
 		)
 
 	def on_draw(self):
@@ -213,10 +263,12 @@ class Game(arcade.Window):
 			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_5)
 
 		self.player.draw()
+		self.chest.draw()
 		self.light_bush_list.draw()
-		self.dirt_list.draw()
-		self.flying_cubic_bush_list.draw()
 		self.phys_light_bush_list.draw()
+		self.flying_cubic_bush_list.draw()
+		self.dirt_list.draw()
+		
 
 		if self.player.hit_points == 0:
 			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.zero_hit_points)
@@ -235,7 +287,7 @@ class Game(arcade.Window):
 
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
 			arcade.draw_text("ПОТРАЧЕНО", camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
-			arcade.draw_text("Нажми 'CAPSLOCK' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.APPLE_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Нажми 'ESCAPE' чтобы начать заново.", camera_center_x, camera_center_y - 70, arcade.color.APPLE_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 			self.game_over = True
 
@@ -251,12 +303,11 @@ class Game(arcade.Window):
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 			self.game_over = True
 
-
 		self.camera.use()
 
 	def on_key_press(self, key, modifiers):
 		if self.game_over == False:
-			if key == arcade.key.SPACE:
+			if key == arcade.key.SPACE  or key == arcade.key.W:
 				if self.physics_engine.can_jump():
 					self.player.change_y = PLAYER_JUMP_SPEED
 				if key == arcade.key.LEFT or key == arcade.key.A or key == arcade.key.RIGHT or key == arcade.key.D:
@@ -268,16 +319,24 @@ class Game(arcade.Window):
 				self.player.idle = False
 				self.last_pressed_key = key
 				if self.physics_engine.can_jump() and self.player.change_x != 0:
-					self.run_sound_play = arcade.play_sound(self.run_sound, volume=0.2, looping=False)
+					self.run_sound_play = arcade.play_sound(self.run_sound, volume=SOUND_VOLUME, looping=False)
 
 			elif key == arcade.key.RIGHT or key == arcade.key.D:
 				self.player.change_x = PLAYER_MOVEMENT_SPEED
 				self.player.idle = False
 				self.last_pressed_key = key
 				if self.physics_engine.can_jump() and self.player.change_x != 0:
-					self.run_sound_play = arcade.play_sound(self.run_sound, volume=0.2, looping=False)
+					self.run_sound_play = arcade.play_sound(self.run_sound, volume=SOUND_VOLUME, looping=False)
 
-		if self.game_over and self.player.hit_points > 0 and key == arcade.key.CAPSLOCK:
+			elif key == arcade.key.E:
+				distance = arcade.get_distance_between_sprites(self.player, self.chest)
+				#print(f"Distance to chest: {distance}")
+				if distance < 70 and not self.chest.is_open:
+					self.chest.open()
+					self.open_chest_play  = arcade.play_sound(self.open_chest, volume=SOUND_VOLUME + 0.2, looping=False)
+					self.open_chest_play  = arcade.play_sound(self.yeahboy_sound, volume=SOUND_VOLUME + 0.2, looping=False)
+
+		if self.game_over and self.player.hit_points > 0 and key == arcade.key.ESCAPE:
 			self.game_over = False
 			self.player.center_x = 50
 			self.player.center_y = 100
@@ -289,9 +348,9 @@ class Game(arcade.Window):
 			arcade.stop_sound(self.rip_fall_play)
 			arcade.stop_sound(self.soundtrack_play)
 			arcade.stop_sound(self.nature_sound_play)
-			self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=0.1, looping=True)
-			self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=0.1, looping=True)
-			self.cj_replica_sound_play = arcade.play_sound(self.cj_replica_sound, volume=0.1, looping=False)
+			self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
+			self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=MUSIC_VOLUME, looping=True)
+			self.cj_replica_sound_play = arcade.play_sound(self.cj_replica_sound, volume=MUSIC_VOLUME, looping=False)
 
 			self.fall_sound_played = False
 			self.last_pressed_key = None
@@ -301,7 +360,7 @@ class Game(arcade.Window):
 			arcade.close_window()
 
 	def on_key_release(self, key, modifiers):
-		if key == arcade.key.SPACE:
+		if key == arcade.key.SPACE or key == arcade.key.W:
 			self.player.change_y = 0
 		elif (key == arcade.key.LEFT or key == arcade.key.A) and self.last_pressed_key == key:
 			self.player.change_x = 0
@@ -337,8 +396,10 @@ class Game(arcade.Window):
 			self.player.right = 2400
 
 		if self.player.top < 0 and self.fall_sound_played == False:
-			self.rip_fall_play = arcade.play_sound(self.rip_fall, volume=0.3, looping=False)
+			self.rip_fall_play = arcade.play_sound(self.rip_fall, volume=SOUND_VOLUME, looping=False)
 			self.fall_sound_played = True
+
+
 
 		if self.game_over == False and self.player.hit_points < 0:
 			arcade.close_window()
