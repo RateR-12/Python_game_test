@@ -317,21 +317,16 @@ class Game(arcade.Window):
 			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
 
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, 200))
-			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, arcade.color.RED)
-			
-			if self.current_death_sound == self.yeahboy_sound:
-				text = "Yeeeeeah boy!"
-			elif self.current_death_sound == self.o_my_god_sound:
-				text = "OOHHH MY GOD!"
+			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, (0, 81, 0))
 
-			arcade.draw_text(text, camera_center_x, camera_center_y, arcade.color.WHITE, 40, anchor_x="center")
-			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!.", camera_center_x, camera_center_y - 70, arcade.color.RED, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Здесь... золото, сапфиры, брилианды и самое ценное - PyPI.", camera_center_x, camera_center_y + 10, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")			
+			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!.", camera_center_x, camera_center_y - 70, arcade.color.ELECTRIC_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 
 		self.camera.use()
 
 	def on_key_press(self, key, modifiers):
-		if self.game_over == False:
+		if self.game_over == False and self.win == False:
 			if key == arcade.key.SPACE  or key == arcade.key.W:
 				if self.physics_engine.can_jump():
 					self.player.change_y = PLAYER_JUMP_SPEED
@@ -361,9 +356,9 @@ class Game(arcade.Window):
 					time.sleep(1)
 					self.open_chest_play  = arcade.play_sound(self.open_chest, volume=SOUND_VOLUME + 0.2, looping=False)
 					time.sleep(0.5)
-					current_death_sound = random.choice(self.dange_sound)
-					self.dange_sound_play  = arcade.play_sound(current_death_sound, volume=SOUND_VOLUME + 0.2, looping=False)
+					self.dange_sound_play  = arcade.play_sound(random.choice(self.dange_sound), volume=SOUND_VOLUME + 0.2, looping=False)
 					self.win = True
+
 
 		if self.game_over and self.player.hit_points > 0 and key == arcade.key.ESCAPE:
 			self.game_over = False
