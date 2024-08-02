@@ -101,7 +101,7 @@ class Chest(arcade.Sprite):
 		self.scale = 0.5
 		self.is_open = False
 
-		self.use_key = arcade.load_sound('sounds/use_key.mp3')
+		self.use_key = arcade.load_sound('sounds/use_key.wav')
 
 	def open(self):
 		self.texture = self.open_texture
@@ -133,22 +133,22 @@ class Game(arcade.Window):
 		self.physics_engine = None
 		self.camera = None
 
-		self.soundtrack = arcade.load_sound('sounds/Valve_-_Jungle_Drums_(Zvyki.com).mp3')
+		self.soundtrack = arcade.load_sound('sounds/Valve_-_Jungle_Drums__Zvyki.com_.wav')
 		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
-		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx - Sounds of the Jungle (320 kbps).mp3')
+		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx-Sounds-of-the-Jungle-_320-kbps_.wav')
 		self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=MUSIC_VOLUME, looping=True)
 		
-		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.mp3')
+		self.cj_replica_sound = arcade.load_sound('sounds/CJ_-_oh_shit_here_we_go_again_66148716.wav')
 		self.run_sound = arcade.load_sound('sounds/run_sound.wav')
 		self.walk_sound = arcade.load_sound('sounds/walk_sound.wav')
 
-		self.rip_fall = arcade.load_sound('sounds/rip-fall.mp3')
-		self.death_mario = arcade.load_sound('sounds/death_mario.mp3')
+		self.rip_fall = arcade.load_sound('sounds/rip-fall.wav')
+		self.death_mario = arcade.load_sound('sounds/death_mario.wav')
 		self.death_sounds = [self.rip_fall, self.death_mario]
 
-		self.open_chest = arcade.load_sound('sounds/open_chest.mp3')
-		self.yeahboy_sound = arcade.load_sound('sounds/yeahboy.mp3')
-		self.o_my_god_sound = arcade.load_sound('sounds/o_my_god.mp3')
+		self.open_chest = arcade.load_sound('sounds/open_chest.wav')
+		self.yeahboy_sound = arcade.load_sound('sounds/yeahboy.wav')
+		self.o_my_god_sound = arcade.load_sound('sounds/o_my_god.wav')
 		self.dange_sound = [self.yeahboy_sound, self.o_my_god_sound]
 
 		self.last_pressed_key = None
@@ -319,8 +319,8 @@ class Game(arcade.Window):
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, 200))
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, (0, 81, 0))
 
-			arcade.draw_text("Здесь... золото, сапфиры, брилианды и самое ценное - PyPI.", camera_center_x, camera_center_y + 10, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")			
-			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!.", camera_center_x, camera_center_y - 70, arcade.color.ELECTRIC_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
+			arcade.draw_text("Здесь... золото, сапфиры, изумруды и самое ценное - PyPI!", camera_center_x, camera_center_y + 10, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")			
+			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!", camera_center_x, camera_center_y - 70, arcade.color.ELECTRIC_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
 
 		self.camera.use()
