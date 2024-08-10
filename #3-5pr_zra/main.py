@@ -3,12 +3,7 @@ import os
 import random
 import time
 from PIL import Image
-
-'''
-Скачал пак ассетов, а там анимации в виде GIF
-Пришлось добавить с помощью Pillow разобрать его на кадры.
-Код не стал убирать, дабы получить отзыв и по нему.
-'''
+from arcade.experimental.lights import Light, LightLayer
 
 
 def splits_gif_into_frames(path_to_file, saving_path):
@@ -35,6 +30,7 @@ SCREEN_HEIGHT = 500
 GRAVITY = 2
 PLAYER_MOVEMENT_SPEED = 7
 PLAYER_JUMP_SPEED = 23
+CHEST_OPEN_DELAY = 1.5
 
 RIGHT_FACING = 0
 LEFT_FACING = 1
@@ -100,13 +96,22 @@ class Chest(arcade.Sprite):
 		self.center_y = 130
 		self.scale = 0.5
 		self.is_open = False
+		self.open_time = None
 
-		self.use_key = arcade.load_sound('sounds/use_key.wav')
 
 	def open(self):
 		self.texture = self.open_texture
-		self.use_key_play  = arcade.play_sound(self.use_key, volume=SOUND_VOLUME + 0.2, looping=False)
 		self.is_open = True
+
+
+class Firefly:
+	def __init__(self, center_x, center_y, radius, color):
+		self.center_x = center_x
+		self.center_y = center_y
+		self.radius = radius
+		self.color = color
+		self.change_x = random.uniform(-1, 1)
+		self.change_y = random.uniform(-1, 1)
 
 
 class Game(arcade.Window):
@@ -133,6 +138,9 @@ class Game(arcade.Window):
 		self.physics_engine = None
 		self.camera = None
 
+		self.light_layer = LightLayer(SCREEN_WIDTH, SCREEN_HEIGHT)
+		self.player_light = Light(0, 0, 200, arcade.color.WHITE, "soft")
+
 		self.soundtrack = arcade.load_sound('sounds/Valve_-_Jungle_Drums__Zvyki.com_.wav')
 		self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
 		self.nature_sound = arcade.load_sound('sounds/Y2mate.mx-Sounds-of-the-Jungle-_320-kbps_.wav')
@@ -147,6 +155,7 @@ class Game(arcade.Window):
 		self.death_sounds = [self.rip_fall, self.death_mario]
 
 		self.open_chest = arcade.load_sound('sounds/open_chest.wav')
+		self.use_key = arcade.load_sound('sounds/use_key.wav')
 		self.yeahboy_sound = arcade.load_sound('sounds/yeahboy.wav')
 		self.o_my_god_sound = arcade.load_sound('sounds/o_my_god.wav')
 		self.dange_sound = [self.yeahboy_sound, self.o_my_god_sound]
@@ -166,6 +175,18 @@ class Game(arcade.Window):
 		self.light_bush_list = arcade.SpriteList()
 		self.flying_cubic_bush_list = arcade.SpriteList()
 		self.phys_light_bush_list = arcade.SpriteList()
+
+		self.firefly_list = []
+		for _ in range(40):  # создайте 20 светлячков
+			center_x = random.uniform(0, 2000)
+			center_y = random.uniform(0, SCREEN_HEIGHT)
+			radius = random.uniform(1, 5)
+			color = arcade.color.YELLOW
+			firefly = Firefly(center_x, center_y, radius, color)
+			self.firefly_list.append(firefly)
+			light = Light(center_x, center_y, radius * 2.5, color, "soft")
+			self.light_layer.add(light)
+			firefly.light = light
 
 		for j in range(0, 400, 490):
 			dirt = arcade.Sprite('sprites/jungle tileset/dirt.png', 3.1)
@@ -255,6 +276,8 @@ class Game(arcade.Window):
 		self.chest = Chest()
 		self.chest_list.append(self.chest)
 
+		self.light_layer.add(self.player_light)
+
 		self.physics_engine = arcade.PhysicsEnginePlatformer(
 			self.player, 
 			gravity_constant=GRAVITY, 
@@ -264,20 +287,22 @@ class Game(arcade.Window):
 	def on_draw(self):
 		self.clear()
 
-		for i in range(0, 1601, 800):
-			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_1)
-			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_2)
-			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_3)
-			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_4)
-			arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_5)
+		with self.light_layer:
+			for i in range(0, 1601, 800):
+				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_1)
+				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_2)
+				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_3)
+				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_4)
+				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_5)
 
-		self.player.draw()
-		self.chest.draw()
-		self.light_bush_list.draw()
-		self.phys_light_bush_list.draw()
-		self.flying_cubic_bush_list.draw()
-		self.dirt_list.draw()
+			self.player.draw()
+			self.chest.draw()
+			self.light_bush_list.draw()
+			self.phys_light_bush_list.draw()
+			self.flying_cubic_bush_list.draw()
+			self.dirt_list.draw()
 		
+		self.light_layer.draw(ambient_color=(20, 20, 20))
 
 		if self.player.hit_points == 0:
 			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.zero_hit_points)
@@ -287,6 +312,9 @@ class Game(arcade.Window):
 			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.two_hit_points)
 		if self.player.hit_points == 3:
 			arcade.draw_lrwh_rectangle_textured(self.camera.position.x + 10, self.camera.position.y + 440, 50, 50, self.tree_hit_points)
+
+		for firefly in self.firefly_list:
+			arcade.draw_circle_filled(firefly.center_x, firefly.center_y, firefly.radius, firefly.color)
 
 		if self.player.bottom < 0 and self.player.hit_points > 0:
 			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
@@ -350,15 +378,9 @@ class Game(arcade.Window):
 
 			elif key == arcade.key.E:
 				distance = arcade.get_distance_between_sprites(self.player, self.chest)
-				#print(f"Distance to chest: {distance}")
 				if distance < 70 and not self.chest.is_open:
-					self.chest.open()
-					time.sleep(1)
-					self.open_chest_play  = arcade.play_sound(self.open_chest, volume=SOUND_VOLUME + 0.2, looping=False)
-					time.sleep(0.5)
-					self.dange_sound_play  = arcade.play_sound(random.choice(self.dange_sound), volume=SOUND_VOLUME + 0.2, looping=False)
-					self.win = True
-
+					self.use_key_play  = arcade.play_sound(self.use_key, volume=SOUND_VOLUME + 0.2, looping=False)
+					self.chest.open_time = time.time()
 
 		if self.game_over and self.player.hit_points > 0 and key == arcade.key.ESCAPE:
 			self.game_over = False
@@ -406,13 +428,38 @@ class Game(arcade.Window):
 		if screen_center_x > 1700:
 			screen_center_x = 1700
 
+		self.player_light.position = self.player.position
+
 		player_centered  = screen_center_x, screen_center_y
 		self.camera.move_to(player_centered)
+
+		for firefly in self.firefly_list:
+			firefly.light.position = firefly.center_x, firefly.center_y
 
 	def on_update(self, delta_time):
 		self.physics_engine.update()
 		self.player.update_animation()
 		self.center_camera_to_player()
+
+		for firefly in self.firefly_list:
+			firefly.center_x += firefly.change_x
+			firefly.center_y += firefly.change_y
+			if firefly.center_x < 0 or firefly.center_x > 2300:
+				firefly.change_x *= -1
+			if firefly.center_y < 0 or firefly.center_y > SCREEN_HEIGHT:
+				firefly.change_y *= -1
+			firefly.light.position = firefly.center_x, firefly.center_y
+
+		for chest in self.chest_list:
+			if chest.open_time is not None:
+				elapsed_time = time.time() - chest.open_time
+				if elapsed_time >= CHEST_OPEN_DELAY:
+					self.chest.open()
+					self.open_chest_play  = arcade.play_sound(self.open_chest, volume=SOUND_VOLUME + 0.2, looping=False)
+					self.dange_sound_play  = arcade.play_sound(random.choice(self.dange_sound), volume=SOUND_VOLUME + 0.2, looping=False)
+					self.win = True
+					chest.open_time = None
+
 
 		if self.player.left < 0:
 			self.player.left = 0
@@ -422,8 +469,6 @@ class Game(arcade.Window):
 		if self.player.top < 0 and self.fall_sound_played == False:
 			self.rip_fall_play = arcade.play_sound(random.choice(self.death_sounds), volume=SOUND_VOLUME, looping=False)
 			self.fall_sound_played = True
-
-
 
 		if self.game_over == False and self.player.hit_points < 0:
 			arcade.close_window()
