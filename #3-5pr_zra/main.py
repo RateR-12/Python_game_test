@@ -98,7 +98,6 @@ class Chest(arcade.Sprite):
 		self.is_open = False
 		self.open_time = None
 
-
 	def open(self):
 		self.texture = self.open_texture
 		self.is_open = True
@@ -161,11 +160,15 @@ class Game(arcade.Window):
 		self.dange_sound = [self.yeahboy_sound, self.o_my_god_sound]
 
 		self.last_pressed_key = None
-		self.current_death_sound = self.o_my_god_sound
 		self.fall_sound_played = False
-		self.game_over = False
 		self.was_on_ground = False
+		self.game_over = False
 		self.win = False
+
+		self.time_of_complete_game = 0
+		self.end_time = 0
+		self.start_time = 0
+		
 
 	def setup(self):
 		self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -177,7 +180,7 @@ class Game(arcade.Window):
 		self.phys_light_bush_list = arcade.SpriteList()
 
 		self.firefly_list = []
-		for _ in range(40):  # создайте 20 светлячков
+		for _ in range(40):
 			center_x = random.uniform(0, 2000)
 			center_y = random.uniform(0, SCREEN_HEIGHT)
 			radius = random.uniform(1, 5)
@@ -284,6 +287,8 @@ class Game(arcade.Window):
 			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list]
 		)
 
+		self.start_time = time.time()
+
 	def on_draw(self):
 		self.clear()
 
@@ -346,7 +351,8 @@ class Game(arcade.Window):
 
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y, SCREEN_WIDTH, SCREEN_HEIGHT, (0, 0, 0, 200))
 			arcade.draw_rectangle_filled(camera_center_x, camera_center_y + 20, 700, 100, (0, 81, 0))
-
+			
+			arcade.draw_text(f"Время прохождения игры: {round(self.time_of_complete_game, 2)}", camera_center_x, camera_center_y - 200, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")
 			arcade.draw_text("Здесь... золото, сапфиры, изумруды и самое ценное - PyPI!", camera_center_x, camera_center_y + 10, arcade.color.WHITE, DEFAULT_FONT_SIZE, anchor_x="center")			
 			arcade.draw_text("Ты нашёл сокровища! Игра пройдена!", camera_center_x, camera_center_y - 70, arcade.color.ELECTRIC_GREEN, DEFAULT_FONT_SIZE, anchor_x="center")
 			arcade.draw_text("Нажми 'Я' ('Z') чтобы выйти.", camera_center_x, camera_center_y - 100, arcade.color.REDWOOD, DEFAULT_FONT_SIZE, anchor_x="center")
@@ -460,6 +466,8 @@ class Game(arcade.Window):
 					self.win = True
 					chest.open_time = None
 
+					self.end_time = time.time()
+					self.time_of_complete_game =  (self.end_time - self.start_time)
 
 		if self.player.left < 0:
 			self.player.left = 0
@@ -471,7 +479,7 @@ class Game(arcade.Window):
 			self.fall_sound_played = True
 
 		if self.game_over == False and self.player.hit_points < 0:
-			arcade.close_window()
+			arcade.close_window()			
 
 
 def main():
