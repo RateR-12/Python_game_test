@@ -86,6 +86,72 @@ class Player(arcade.Sprite):
 				self.person_face_direction
 			]
 
+
+class Agatic(arcade.Sprite):
+	def __init__(self, x, y, left_border, right_border):
+		super().__init__()
+		self.center_x = x
+		self.center_y = y
+		self.change_x = 2
+		self.person_face_direction = RIGHT_FACING
+		self.cur_texture = 0
+		self.scale = 2
+		self.set_hit_box([[-10, -10], [10, -10], [10, 10], [-10, 10]])
+
+		self.left_border = left_border
+		self.right_border = right_border
+		self.idle_textures = []
+
+		texture = arcade.load_texture_pair(f'sprites/agaric/agaric_idle.png')
+		self.idle_textures.append(texture)
+		texture = arcade.load_texture_pair(f'sprites/agaric/agaric_idle_down.png')
+		self.idle_textures.append(texture)
+
+
+	def update_animation(self, delta_time: float = 1 / 30):
+		self.cur_texture += 0.03
+		if self.cur_texture % 2 == 0:
+			self.texture = self.idle_textures[0][self.person_face_direction]
+		if self.cur_texture >= 2:
+			self.cur_texture = 0
+		self.texture = self.idle_textures[int(self.cur_texture)][
+			self.person_face_direction
+		]
+
+
+
+class GreenAgatic(arcade.Sprite):
+	def __init__(self, x, y, left_border, right_border):
+		super().__init__()
+		self.center_x = x
+		self.center_y = y
+		self.change_x = 2
+		self.person_face_direction = RIGHT_FACING
+		self.cur_texture = 0
+		self.scale = 2
+		self.set_hit_box([[-10, -10], [10, -10], [10, 10], [-10, 10]])
+
+		self.left_border = left_border
+		self.right_border = right_border
+		self.idle_textures = []
+
+		texture = arcade.load_texture_pair(f'sprites/agaric/green_agaric_idle.png')
+		self.idle_textures.append(texture)
+		texture = arcade.load_texture_pair(f'sprites/agaric/green_agaric_idle_down.png')
+		self.idle_textures.append(texture)
+
+
+	def update_animation(self, delta_time: float = 1 / 30):
+		self.cur_texture += 0.03
+		if self.cur_texture % 2 == 0:
+			self.texture = self.idle_textures[0][self.person_face_direction]
+		if self.cur_texture >= 2:
+			self.cur_texture = 0
+		self.texture = self.idle_textures[int(self.cur_texture)][
+			self.person_face_direction
+		]
+
+
 class Chest(arcade.Sprite):
 	def __init__(self):
 		super().__init__()
@@ -133,8 +199,12 @@ class Game(arcade.Window):
 		self.tree_hit_points = arcade.load_texture('sprites/hit_points/3_hit_points.png')
 
 		self.player = None
+		self.agatic = None
+		self.agatic_2 = None
 		self.chest = None
 		self.physics_engine = None
+		self.agatic_physics_engine = None
+		self.agatic_physics_engine_2 = None
 		self.camera = None
 
 		self.light_layer = LightLayer(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -172,6 +242,7 @@ class Game(arcade.Window):
 
 	def setup(self):
 		self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+		self.agatic_list = arcade.SpriteList()
 		self.chest_list = arcade.SpriteList()
 		self.dirt_list = arcade.SpriteList()
 		self.phys_dirt_list = arcade.SpriteList()
@@ -274,17 +345,34 @@ class Game(arcade.Window):
 		draw_flying_cubic_bush(1280, 350, 1.7)
 
 		self.player = Player()
+		self.agatic = GreenAgatic(850, 200, 800, 955)
 		self.chest = Chest()
 
-		self.chest = Chest()
 		self.chest_list.append(self.chest)
 
 		self.light_layer.add(self.player_light)
 
+		self.agatic_physics_engine = arcade.PhysicsEnginePlatformer(
+			self.agatic, 
+			gravity_constant=GRAVITY, 
+			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list]
+		)
+
+		self.agatic_list.append(self.agatic)
+
+		self.agatic_2 = Agatic(1990, 200, 1750, 2200)
+		self.agatic_physics_engine_2 = arcade.PhysicsEnginePlatformer(
+			self.agatic_2, 
+			gravity_constant=GRAVITY, 
+			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list]
+		)
+
+		self.agatic_list.append(self.agatic_2)
+
 		self.physics_engine = arcade.PhysicsEnginePlatformer(
 			self.player, 
 			gravity_constant=GRAVITY, 
-			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list]
+			walls=[self.phys_dirt_list, self.phys_light_bush_list, self.flying_cubic_bush_list,  self.chest_list, self.agatic_list]
 		)
 
 		self.start_time = time.time()
@@ -301,6 +389,8 @@ class Game(arcade.Window):
 				arcade.draw_lrwh_rectangle_textured(i, 0, 800, SCREEN_HEIGHT, self.bg_layer_5)
 
 			self.player.draw()
+			self.agatic.draw()
+			self.agatic_2.draw()
 			self.chest.draw()
 			self.light_bush_list.draw()
 			self.phys_light_bush_list.draw()
@@ -321,7 +411,7 @@ class Game(arcade.Window):
 		for firefly in self.firefly_list:
 			arcade.draw_circle_filled(firefly.center_x, firefly.center_y, firefly.radius, firefly.color)
 
-		if self.player.bottom < 0 and self.player.hit_points > 0:
+		if (self.player.bottom < 0 and self.player.hit_points > 0) or arcade.check_for_collision(self.player, self.agatic_2):
 			camera_center_x = self.camera.position.x + self.camera.viewport_width / 2
 			camera_center_y = self.camera.position.y + self.camera.viewport_height / 2
 
@@ -444,7 +534,13 @@ class Game(arcade.Window):
 
 	def on_update(self, delta_time):
 		self.physics_engine.update()
+		self.agatic_physics_engine.update()
+		self.agatic_physics_engine_2.update()
 		self.player.update_animation()
+		self.agatic.update_animation()
+		self.agatic.update()
+		self.agatic_2.update_animation()
+		self.agatic_2.update()
 		self.center_camera_to_player()
 
 		for firefly in self.firefly_list:
@@ -477,6 +573,33 @@ class Game(arcade.Window):
 		if self.player.top < 0 and self.fall_sound_played == False:
 			self.rip_fall_play = arcade.play_sound(random.choice(self.death_sounds), volume=SOUND_VOLUME, looping=False)
 			self.fall_sound_played = True
+
+		if self.agatic.center_x >= self.agatic.right_border:
+			self.agatic.change_x = -1
+		elif self.agatic.left == self.agatic.left_border:
+			self.agatic.change_x = 1
+
+		if self.agatic_2.center_x >= self.agatic_2.right_border:
+			self.agatic_2.change_x = -1
+		elif self.agatic_2.left == self.agatic_2.left_border:
+			self.agatic_2.change_x = 1
+
+		if arcade.check_for_collision(self.player, self.agatic_2):
+			self.player.center_x = 50
+			self.player.center_y = 100
+			self.player.change_x = 0
+			self.player.change_y = 0
+			self.player.idle = True
+			self.player.hit_points -= 1
+
+			arcade.stop_sound(self.soundtrack_play)
+			arcade.stop_sound(self.nature_sound_play)
+			self.soundtrack_play = arcade.play_sound(self.soundtrack, volume=MUSIC_VOLUME, looping=True)
+			self.nature_sound_play = arcade.play_sound(self.nature_sound, volume=MUSIC_VOLUME, looping=True)
+			self.cj_replica_sound_play = arcade.play_sound(self.cj_replica_sound, volume=MUSIC_VOLUME, looping=False)
+
+			self.fall_sound_played = False
+			self.last_pressed_key = None
 
 		if self.game_over == False and self.player.hit_points < 0:
 			arcade.close_window()			
